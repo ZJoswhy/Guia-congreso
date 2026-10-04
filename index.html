@@ -203,6 +203,45 @@ button{cursor:pointer}
 }
 @media (min-width:900px){ .btn-agenda{display:none} }
 
+/* Menú de filtros (solo celular) */
+.btn-menu,.menu-filtros,.menu-fondo,.filtro-activo{display:none}
+@media (max-width:899px){
+  .filtros{display:none}
+  .btn-menu{display:grid;place-items:center;position:relative;flex:none;width:42px;height:42px;margin-left:-8px;border:0;border-radius:12px;background:transparent;color:inherit}
+  .btn-menu:hover,.btn-menu[aria-expanded="true"]{background:rgba(255,255,255,.14)}
+  .btn-menu svg{width:26px;height:26px}
+  .menu-punto{position:absolute;top:7px;right:6px;width:10px;height:10px;border-radius:50%;background:var(--oro);box-shadow:0 0 0 2px var(--banda)}
+  .menu-punto[hidden]{display:none}
+  .filtro-activo{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 16px;background:var(--papel);border-bottom:1px solid var(--linea);font-size:.9rem;font-weight:600}
+  .filtro-activo span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .filtro-activo[hidden]{display:none}
+  .menu-fondo{display:block;position:fixed;inset:0;z-index:39;background:rgba(16,38,25,.45);opacity:0;transition:opacity .25s}
+  .menu-fondo.abierto{opacity:1}
+  .menu-filtros{display:flex;flex-direction:column;position:fixed;top:0;bottom:0;left:0;z-index:40;width:min(86vw, 340px);background:var(--papel);box-shadow:8px 0 32px rgba(0,0,0,.18);transform:translateX(-102%);transition:transform .28s cubic-bezier(.2,.8,.2,1)}
+  .menu-filtros.abierto{transform:none}
+  .menu-fondo[hidden],.menu-filtros[hidden]{display:none}
+  .menu-cab{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:calc(12px + env(safe-area-inset-top)) 10px 12px 20px;background:var(--banda);color:#FFFFFF}
+  .menu-cab h2{margin:0;font-size:1.1rem;font-weight:800}
+  .menu-cerrar{width:42px;height:42px;border:0;border-radius:12px;background:transparent;color:inherit;font-size:1.8rem;line-height:1}
+  .menu-cerrar:hover{background:rgba(255,255,255,.14)}
+  .menu-cont{flex:1;min-height:0;overflow:auto;padding:6px 12px 16px;overscroll-behavior:contain}
+  .menu-cont section{padding:12px 0 8px}
+  .menu-cont section+section{border-top:1px solid var(--linea)}
+  .menu-cont h3{margin:2px 10px 8px;font-size:.86rem;font-weight:700;color:var(--grafito)}
+  .menu-op{display:flex;align-items:center;gap:12px;width:100%;min-height:50px;padding:10px 12px;border:0;border-radius:12px;background:transparent;text-align:left;font-weight:600;font-size:1rem;color:var(--texto)}
+  .menu-op:hover{background:var(--hover)}
+  .menu-op[aria-pressed="true"]{background:var(--verde-suave);color:var(--verde-texto)}
+  .menu-op .mues{width:14px;height:14px;border-radius:4px;background:var(--c);flex:none}
+  .menu-op .mues-vacia{visibility:hidden}
+  .menu-op-txt{flex:1;min-width:0}
+  .menu-op-n{font-variant-numeric:tabular-nums;font-size:.86rem;font-weight:700;color:var(--grafito)}
+  .menu-op[aria-pressed="true"] .menu-op-n{color:var(--verde-texto)}
+  .menu-op::after{content:"";flex:none;width:20px;height:20px;border-radius:50%;border:2px solid var(--linea);box-sizing:border-box}
+  .menu-op[aria-pressed="true"]::after{border:6px solid var(--anillo)}
+  .menu-pie{display:flex;flex-direction:column;gap:8px;padding:12px 16px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--linea)}
+  .menu-pie .btn{min-height:48px;font-size:1rem}
+}
+
 /* Agenda */
 .resumen{margin:12px 0 4px;color:var(--grafito);font-size:.88rem}
 .resultados-salas{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}
@@ -329,6 +368,10 @@ dialog::backdrop{background:rgba(16,38,25,.5)}
 
 <div class="app" id="app">
   <header class="banda">
+    <button class="btn-menu" id="btnMenu" type="button" aria-controls="menuFiltros" aria-expanded="false" aria-label="Abrir filtros de actividades">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>
+      <span class="menu-punto" id="menuPunto" hidden></span>
+    </button>
     <div class="banda-txt">
       <h1 id="titulo">Congreso</h1>
       <p id="subtitulo"></p>
@@ -336,6 +379,7 @@ dialog::backdrop{background:rgba(16,38,25,.5)}
     <button class="btn-agenda" id="btnAgenda" type="button" aria-controls="panel">Agenda</button>
   </header>
   <div class="aviso-general" id="avisoGeneral" role="status" hidden></div>
+  <div class="filtro-activo" id="filtroActivo" hidden></div>
   <div class="org-barra" id="orgBarra" hidden>
     <p><strong>Modo organizador</strong> <span id="orgSesion"></span>. <span class="org-estado" id="orgEstado"></span></p>
     <button type="button" data-org="ajustes">Datos del congreso</button>
@@ -375,6 +419,15 @@ dialog::backdrop{background:rgba(16,38,25,.5)}
   </main>
 </div>
 
+<div class="menu-fondo" id="menuFondo" hidden></div>
+<aside class="menu-filtros" id="menuFiltros" role="dialog" aria-modal="true" aria-labelledby="menuTitulo" hidden>
+  <div class="menu-cab">
+    <h2 id="menuTitulo">Filtrar actividades</h2>
+    <button type="button" class="menu-cerrar" data-menu="cerrar" aria-label="Cerrar filtros">&times;</button>
+  </div>
+  <div class="menu-cont" id="menuCont"></div>
+  <div class="menu-pie" id="menuPie"></div>
+</aside>
 <dialog id="dlg"><div class="dlg" id="dlgCont"></div></dialog>
 <div class="hoja-qr" id="hojaQR"></div>
 <div class="aviso" id="aviso" role="status" aria-live="polite"></div>
@@ -855,7 +908,108 @@ function renderFiltros() {
   }
   if (hayHoy()) h += '<span class="sep" aria-hidden="true"></span>' + chip('ahora', '1', 'En curso ahora', null, S.ahora);
   $('#filtros').innerHTML = h;
+  renderMenu();
 }
+
+/* ---------- Menú de filtros (celular) ---------- */
+var menu = $('#menuFiltros'), menuFondo = $('#menuFondo'), btnMenu = $('#btnMenu');
+function filtrosMenuActivos() { return S.tipo !== 'todo' || S.dia !== 'todo' || S.ahora; }
+function contarCon(cambio) {
+  var antes = { tipo: S.tipo, dia: S.dia, ahora: S.ahora };
+  Object.assign(S, cambio);
+  var n = D.eventos.filter(coincide).length;
+  Object.assign(S, antes);
+  return n;
+}
+function opcionMenu(grupo, valor, texto, color, activo, n) {
+  return '<button type="button" class="menu-op" data-grupo="' + grupo + '" data-valor="' + esc(valor) + '" aria-pressed="' + activo + '">' +
+    '<span class="mues' + (color ? '' : ' mues-vacia') + '"' + (color ? ' style="--c:' + esc(color) + '"' : '') + '></span>' +
+    '<span class="menu-op-txt">' + esc(texto) + '</span><span class="menu-op-n">' + n + '</span></button>';
+}
+function renderMenu() {
+  var c = $('#menuCont'); if (!c) return;
+  var h = '<section><h3>Tipo de actividad</h3>' + opcionMenu('tipo', 'todo', 'Todas las actividades', null, S.tipo === 'todo', contarCon({ tipo: 'todo' }));
+  Object.keys(D.tipos).forEach(function (k) {
+    if (D.eventos.some(function (e) { return e.tipo === k; })) h += opcionMenu('tipo', k, D.tipos[k].nombre, D.tipos[k].color, S.tipo === k, contarCon({ tipo: k }));
+  });
+  h += '</section>';
+  if (D.dias.length > 1) {
+    h += '<section><h3>Día</h3>' + opcionMenu('dia', 'todo', 'Todos los días', null, S.dia === 'todo', contarCon({ dia: 'todo' }));
+    D.dias.forEach(function (d) {
+      var f = fechaLarga(d.fecha);
+      h += opcionMenu('dia', d.id, (d.etiqueta || d.id) + (f ? ', ' + f : ''), null, S.dia === d.id, contarCon({ dia: d.id }));
+    });
+    h += '</section>';
+  }
+  if (hayHoy()) h += '<section><h3>Horario</h3>' + opcionMenu('ahora', '1', 'Solo lo que está en curso', null, S.ahora, contarCon({ ahora: true })) + '</section>';
+  c.innerHTML = h;
+  var n = eventosFiltrados().length;
+  $('#menuPie').innerHTML = '<button type="button" class="btn primario" data-menu="ver">Ver ' + (n === 1 ? '1 actividad' : n + ' actividades') + '</button>' +
+    (filtrosMenuActivos() ? '<button type="button" class="btn" data-menu="limpiar">Quitar filtros</button>' : '');
+  var partes = [];
+  if (S.tipo !== 'todo') partes.push(tipoInfo(S.tipo).nombre);
+  if (S.dia !== 'todo') { var di = diaInfo(S.dia); partes.push(di ? (di.etiqueta || di.id) : S.dia); }
+  if (S.ahora) partes.push('en curso ahora');
+  var fa = $('#filtroActivo'), activo = filtrosMenuActivos();
+  fa.innerHTML = activo ? '<span>Filtrando: ' + esc(partes.join(', ')) + '</span><button type="button" class="enlace" data-menu="limpiar">Quitar</button>' : '';
+  fa.hidden = !activo;
+  $('#menuPunto').hidden = !activo;
+}
+function abrirMenu() {
+  renderMenu();
+  menu.hidden = false; menuFondo.hidden = false;
+  menu.offsetWidth; // aplica la posición inicial antes de animar
+  menu.classList.add('abierto'); menuFondo.classList.add('abierto');
+  btnMenu.setAttribute('aria-expanded', 'true');
+  var primero = menu.querySelector('.menu-op[aria-pressed="true"]') || menu.querySelector('.menu-op');
+  setTimeout(function () { if (primero) primero.focus(); }, 60);
+}
+function cerrarMenu(devolverFoco) {
+  if (menu.hidden) return;
+  menu.classList.remove('abierto'); menuFondo.classList.remove('abierto');
+  btnMenu.setAttribute('aria-expanded', 'false');
+  setTimeout(function () { if (!menu.classList.contains('abierto')) { menu.hidden = true; menuFondo.hidden = true; } }, 280);
+  if (devolverFoco !== false) btnMenu.focus();
+}
+function aplicarFiltros() {
+  renderFiltros(); actualizarMapa();
+  if (S.vista === 'agenda') renderPanel();
+  actualizarAsa();
+}
+btnMenu.addEventListener('click', function () { if (menu.hidden) abrirMenu(); else cerrarMenu(); });
+menuFondo.addEventListener('click', function () { cerrarMenu(); });
+menu.addEventListener('click', function (e) {
+  var op = e.target.closest('.menu-op');
+  if (op) {
+    var g = op.getAttribute('data-grupo');
+    if (g === 'ahora') S.ahora = !S.ahora; else S[g] = op.getAttribute('data-valor');
+    aplicarFiltros();
+    var mismo = menu.querySelector('.menu-op[data-grupo="' + g + '"][data-valor="' + op.getAttribute('data-valor') + '"]');
+    if (mismo) mismo.focus();
+    return;
+  }
+  var a = e.target.closest('[data-menu]'); if (!a) return;
+  var acc = a.getAttribute('data-menu');
+  if (acc === 'cerrar') cerrarMenu();
+  else if (acc === 'limpiar') { S.tipo = 'todo'; S.dia = 'todo'; S.ahora = false; aplicarFiltros(); }
+  else if (acc === 'ver') {
+    cerrarMenu(false);
+    if (S.vista !== 'agenda') { S.vista = 'agenda'; S.sel = null; actualizarMapa(); renderPanel(); escribirHash(); }
+    cont.scrollTop = 0;
+    abrirPanel('abierto');
+  }
+});
+menu.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') { e.preventDefault(); cerrarMenu(); return; }
+  if (e.key !== 'Tab') return;
+  var f = menu.querySelectorAll('button'), primero = f[0], ultimo = f[f.length - 1];
+  if (e.shiftKey && document.activeElement === primero) { e.preventDefault(); ultimo.focus(); }
+  else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primero.focus(); }
+});
+$('#filtroActivo').addEventListener('click', function (e) {
+  if (e.target.closest('[data-menu="limpiar"]')) { S.tipo = 'todo'; S.dia = 'todo'; S.ahora = false; aplicarFiltros(); }
+});
+mqEscritorio.addEventListener && mqEscritorio.addEventListener('change', function () { if (esEscritorio()) cerrarMenu(false); });
 $('#filtros').addEventListener('click', function (e) {
   var b = e.target.closest('.chip'); if (!b) return;
   var g = b.getAttribute('data-grupo'), v = b.getAttribute('data-valor');
